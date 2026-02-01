@@ -1,5 +1,8 @@
 const express = require('express');
 const createError = require('http-errors');
+const UserRoutes = require('./routes/User.route');
+const BlogRoutes = require('./routes/Blog.route');
+const TestimonialRoutes = require('./routes/Testimonial.route');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 require('dotenv').config();
@@ -14,6 +17,10 @@ connectDB();
 app.get('/', async (req, res, next) => {
   res.send({ message: 'Awesome it works 🐻' });
 });
+
+app.use('/auth', UserRoutes);
+app.use('/blog', BlogRoutes);
+app.use('/testimonial', TestimonialRoutes);
 
 app.use('/api', require('./routes/api.route'));
 
