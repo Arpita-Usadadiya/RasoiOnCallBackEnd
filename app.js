@@ -5,6 +5,7 @@ const BlogRoutes = require('./routes/Blog.route');
 const TestimonialRoutes = require('./routes/Testimonial.route');
 const GalleryRoutes = require('./routes/Gallery.route');
 const CrouselRoutes = require('./routes/Crousel.route');
+const ChefRoutes = require('./routes/Chef.route');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 require('dotenv').config();
@@ -25,6 +26,7 @@ app.use('/blog', BlogRoutes);
 app.use('/testimonial', TestimonialRoutes);
 app.use('/gallery', GalleryRoutes);
 app.use('/crousel', CrouselRoutes);
+app.use('/chef', ChefRoutes);
 
 
 

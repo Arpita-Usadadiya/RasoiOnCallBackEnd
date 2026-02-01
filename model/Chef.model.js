@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 
 const ChefSchema = new mongoose.Schema({
     name: { type: String, required: true},
-    Address: { type: String, required: true},
-    profilePicture: { type: String},
+    address: { type: String, required: true},
+    profilepic: { type: String},
     city: { type: String, required: true },
     state: { type: String, required: true },
     area: { type: String, required: true },
@@ -11,14 +11,11 @@ const ChefSchema = new mongoose.Schema({
     pincode: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
-    Experience: { type: String, required: true },
-    updatedAt: { type: Date, default: Date.now}
+    experience: { type: String, required: true },
+},
+{
+    timestamps:true
 });
 
-//Middleware to update the updatedAt field before saving
-ChefSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
-});
 
 module.exports = mongoose.model('Chef', ChefSchema);
