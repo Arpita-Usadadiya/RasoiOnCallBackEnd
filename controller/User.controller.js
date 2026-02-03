@@ -2,13 +2,14 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../model/User.model");
+require("dotenv").config();
 
 //Use the JWT secret from .env (fallback to default for development)
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 //Generate JWT Token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "2h" });
 };
 
 //USER SIGNUP

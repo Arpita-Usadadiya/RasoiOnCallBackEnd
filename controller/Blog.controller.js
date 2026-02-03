@@ -6,34 +6,37 @@ const createBlog = async (req, res) => {
   try {
     const { title, content, category, image } = req.body;
 
-    //validation process
     if (!title || !content || !category || !image) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    //Create a new blog post with the provides data
+    let imageUrl = image;
+
+    if (image.startsWith("data:image")) {
+      const result = await cloudinary.uploader.upload(image, {
+        folder: "blogs",
+      });
+      imageUrl = result.secure_url;
+    }
+
     const newBlog = new Blog({
       title,
       content,
       category,
-      image,
+      image: imageUrl,
     });
 
     await newBlog.save();
+
     res.status(201).json({
       message: "Blog post created successfully",
-      blog: {
-        _id: newBlog._id,
-        title: newBlog.title,
-        content: newBlog.content,
-        category: newBlog.category,
-        image: newBlog.image,
-      },
+      blog: newBlog,
     });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
 
 //get all blogs
 const getAllBlogs = async (req, res) => {
@@ -73,34 +76,29 @@ const updateBlog = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, content, category, image } = req.body;
-    let imageUrl;
 
-    //image uploading process
+    const updateData = { title, content, category };
+
     if (image && image.startsWith("data:image")) {
-
       const result = await cloudinary.uploader.upload(image, {
         folder: "blogs",
       });
-      imageUrl = result.secure_url;
-    }
-    const updateBlog = await Blog.findByIdAndUpdate(
-      id,
-      {
-        title,
-        content,
-        category,
-        image: imageUrl,
-      },
-      { new: true },
-    );
-
-    if (!updateBlog) {
-      return res.status(500).json({ message: "Blog post not found" });
+      updateData.image = result.secure_url;
     }
 
-    res.status(200).json({ message: "Blog successfully updated", updateBlog });
+    const updatedBlog = await Blog.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    if (!updatedBlog) {
+      return res.status(404).json({ message: "Blog post not found" });
+    }
+
+    res.status(200).json({
+      message: "Blog successfully updated",
+      blog: updatedBlog,
+    });
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
