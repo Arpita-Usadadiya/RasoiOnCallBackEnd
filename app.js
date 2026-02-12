@@ -1,57 +1,67 @@
-const express = require('express');
+const express = require("express");
 const cors = require("cors");
-const createError = require('http-errors');
-const UserRoutes = require('./routes/User.route');
-const BlogRoutes = require('./routes/Blog.route');
-const TestimonialRoutes = require('./routes/Testimonial.route');
-const GalleryRoutes = require('./routes/Gallery.route');
-const CrouselRoutes = require('./routes/Crousel.route');
-const ChefRoutes = require('./routes/Chef.route');
-const BookingRoutes = require('./routes/Booking.route');
-const morgan = require('morgan');
-const connectDB = require('./config/db');
-require('dotenv').config();
+const morgan = require("morgan");
+const createError = require("http-errors");
+require("dotenv").config();
+
+const connectDB = require("./config/db");
+
+// ROUTES
+const UserRoutes = require("./routes/User.route");
+const BlogRoutes = require("./routes/Blog.route");
+const TestimonialRoutes = require("./routes/Testimonial.route");
+const GalleryRoutes = require("./routes/Gallery.route");
+const CrouselRoutes = require("./routes/Crousel.route");
+const ChefRoutes = require("./routes/Chef.route");
+const BookingRoutes = require("./routes/Booking.route");
 
 const app = express();
+
+/* -------------------- MIDDLEWARE -------------------- */
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
+/* -------------------- DB -------------------- */
 connectDB();
 
-app.get('/', async (req, res, next) => {
-  res.send({ message: 'Awesome it works 🐻' });
+/* -------------------- TEST ROUTE -------------------- */
+app.get("/", (req, res) => {
+  res.json({ message: "Backend running 🚀" });
 });
 
-app.use('/auth', UserRoutes);
-app.use('/blog', BlogRoutes);
-app.use('/testimonial', TestimonialRoutes);
-app.use('/gallery', GalleryRoutes);
-app.use('/crousel', CrouselRoutes);
-app.use('/chef', ChefRoutes);
-app.use('/booking', BookingRoutes);
+/* -------------------- API ROUTES -------------------- */
+app.use("/auth", UserRoutes);
+app.use("/blog", BlogRoutes);
+app.use("/testimonial", TestimonialRoutes);
+app.use("/gallery", GalleryRoutes);
+app.use("/crousel", CrouselRoutes);
+app.use("/chef", ChefRoutes);
+app.use("/booking", BookingRoutes);     // protected booking routes
 
-
-
-app.use('/api', require('./routes/api.route'));
-
+/* -------------------- 404 HANDLER -------------------- */
 app.use((req, res, next) => {
-  next(createError.NotFound());
+  next(createError.NotFound("Route not found"));
 });
 
+/* -------------------- ERROR HANDLER -------------------- */
 app.use((err, req, res, next) => {
-  res.status(err.status || 500);
-  res.send({
+  res.status(err.status || 500).json({
     status: err.status || 500,
-    message: err.message,
+    message: err.message || "Internal Server Error",
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 @ http://localhost:${PORT}`));
+/* -------------------- SERVER -------------------- */
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});

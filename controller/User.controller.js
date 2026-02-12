@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 //Generate JWT Token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "2h" });
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
 };
 
 //USER SIGNUP

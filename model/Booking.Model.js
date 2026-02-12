@@ -1,20 +1,59 @@
-const mongoose = require('mongoose');
+// model/Booking.Model.js
 
-const BookingSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    chef: { type: mongoose.Schema.Types.ObjectId, ref: 'Chef', required: true },
-    bookingDate: { type: Date, required: true },
-    
-    status: { 
-        type: String, 
-        enum: ['booked', 'non-booked'], // Updated status options
-        default: 'non-booked' // Default to "non-booked"
+const mongoose = require("mongoose");
+
+const BookingSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    notes: { type: String },
-    
 
-},{
-    timestamp: true,
-})
+    visitDate: {
+      type: String,
+      required: true,
+    },
 
-module.exports=mongoose.model('Booknig', BookingSchema)
+    visitTime: {
+      type: String,
+      required: true,
+    },
+
+    chefId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chef",
+      required: true,
+    },
+
+    useCase: {
+      type: String,
+      enum: [
+        "One Time Cooking",
+        "Party Chef",
+        "Cook For A Month",
+      ],
+      required: true,
+    },
+
+    totalMembers: {
+      type: Number,
+      required: true,
+    },
+
+    amount: {
+      type: Number,
+      required: true,
+    },
+
+    status: {
+      type: String,
+      default: "Pending",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model("Booking", BookingSchema);

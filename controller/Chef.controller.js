@@ -2,22 +2,82 @@ const { cloudinary } = require("../config/cloudinary");
 const Chef = require("../model/Chef.model");
 const { mongoose } = require("mongoose");
 
+
+//chefs near me
+const chefsNearMe = async (req, res) => {
+  try {
+    const { city } = req.query;
+
+    const chefs = city
+  ? await Chef.find({  city: { $regex: city, $options: "i" } })
+  : await Chef.find();
+
+
+    res.status(200).json({
+      message: "Chefs near you",
+      data: chefs,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//smart-match
+
+const smartMatchChefs = async (req, res) => {
+  try {
+    const { cuisine, spice, maxPrice, availability } = req.query;
+
+    let query = {};
+
+    if (cuisine) {
+      query.cuisine = { $in: [cuisine] };
+    }
+
+    if (maxPrice) {
+      query.price = { $lte: Number(maxPrice) };
+    }
+
+    if (availability === "true") {
+      query.available = true;
+    }
+
+    const chefs = await Chef.find(query);
+
+    res.status(200).json({
+      success: true,
+      data: chefs,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 //create a chef
 const createChef = async (req, res) => {
   try {
-    const {
-      name,
-      address,
-      profilepic,
-      city,
-      state,
-      area,
-      country,
-      pincode,
-      email,
-      phone,
-      experience,
-    } = req.body;
+   const {
+  name,
+  address,
+  profilepic,
+  city,
+  state,
+  area,
+  country,
+  pincode,
+  email,
+  phone,
+  experience,
+  cuisine,
+  spiceLevel,
+  pricePerDay,
+  hygieneScore,
+  availability
+} = req.body;
+
     if (
       !name ||
       !address ||
@@ -38,19 +98,26 @@ const createChef = async (req, res) => {
     if (existingChef) {
       return res.status(400).json({ message: "Chef already exists" });
     }
+    
     const newChef = new Chef({
-      name,
-      address,
-      city,
-      state,
-      area,
-      country,
-      pincode,
-      email,
-      phone,
-      experience,
-      profilepic,
-    });
+  name,
+  address,
+  city,
+  state,
+  area,
+  country,
+  pincode,
+  email,
+  phone,
+  experience,
+  profilepic,
+  cuisine,
+  spiceLevel,
+  pricePerDay,
+  hygieneScore,
+  availability
+});
+
     await newChef.save();
     res.status(200).json({
       message: "Chef created Successfully",
@@ -133,7 +200,7 @@ const updateChef = async (req, res) => {
         email,
         phone,
         experience,
-        profilepic,
+        profilepic: profilepicUrl,
       },
       { new: true },
     );
@@ -185,4 +252,4 @@ const deleteAllChef = async (req, res) => {
   }
 };
 
-module.exports = { createChef, getAllChef, getById, updateChef, deleteCheftById, deleteAllChef };
+module.exports = { createChef, getAllChef, getById, updateChef, deleteCheftById, deleteAllChef, chefsNearMe, smartMatchChefs };
