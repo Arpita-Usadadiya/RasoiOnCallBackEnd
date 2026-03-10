@@ -14,6 +14,8 @@ const GalleryRoutes = require("./routes/Gallery.route");
 const CrouselRoutes = require("./routes/Crousel.route");
 const ChefRoutes = require("./routes/Chef.route");
 const BookingRoutes = require("./routes/Booking.route");
+const ReviewRoutes = require("./routes/Review.route");
+const PaymentRoutes = require("./routes/Payment.route");
 
 const app = express();
 
@@ -46,6 +48,9 @@ app.use("/gallery", GalleryRoutes);
 app.use("/crousel", CrouselRoutes);
 app.use("/chef", ChefRoutes);
 app.use("/booking", BookingRoutes);     // protected booking routes
+app.use("/review", ReviewRoutes);
+app.use("/payment", PaymentRoutes);
+app.use("/webhook", require("./routes/webhook..route"));
 
 /* -------------------- 404 HANDLER -------------------- */
 app.use((req, res, next) => {

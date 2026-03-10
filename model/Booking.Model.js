@@ -28,11 +28,7 @@ const BookingSchema = new mongoose.Schema(
 
     useCase: {
       type: String,
-      enum: [
-        "One Time Cooking",
-        "Party Chef",
-        "Cook For A Month",
-      ],
+      enum: ["One Time Cooking", "Party Chef", "Cook For A Month"],
       required: true,
     },
 
@@ -48,12 +44,31 @@ const BookingSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      default: "Pending",
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
     },
+
+    paymentStatus: {
+      type: String,
+      default: "unpaid",
+    },
+
+    serviceStatus: {
+      type: String,
+      default: "upcoming",
+    },
+
+    chefArrivalTime: {
+      type: String,
+    },
+    refundStatus: {
+  type: String,
+  default: "none"
+}
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Booking", BookingSchema);

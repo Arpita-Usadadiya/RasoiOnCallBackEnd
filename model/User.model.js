@@ -1,11 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const UserSchema = new mongoose.Schema({
-    name: { type: String, required: true},
-    email: { type: String, required: true},
+const UserSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true },
     password: { type: String }, //Add this field to store the image URL or path
-    phone: { type: String},
-    profileImage: { type: String},
+    phone: { type: String },
+    profileImage: { type: String },
     addresses: [
       {
         street: String,
@@ -14,12 +15,21 @@ const UserSchema = new mongoose.Schema({
         pincode: String,
       },
     ],
-},
-{
-    timestamps: true, // ✅ creates createdAt & updatedAt automatically
-  }
-);
+    role: {
+      type: String,
+      enum: ["user", "chef", "admin"],
+      default: "user",
+    },
 
+    isApproved: {
+      type: Boolean,
+      default: false, // only for chefs
+    },
+  },
+  {
+    timestamps: true, // ✅ creates createdAt & updatedAt automatically
+  },
+);
 
 //not executed In Mongoose v7+, pre('save') does NOT use next the same way
 // When using async/await, next becomes undefined
@@ -30,4 +40,4 @@ const UserSchema = new mongoose.Schema({
 //     next();
 // });
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model("User", UserSchema);

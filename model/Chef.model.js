@@ -1,9 +1,16 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const ChefSchema = new mongoose.Schema({
-    name: { type: String, required: true},
-    address: { type: String, required: true},
-    profilepic: { type: String},
+const ChefSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    name: { type: String, required: true },
+    address: { type: String, required: true },
+    profilepic: { type: String },
     city: { type: String, required: true },
     state: { type: String, required: true },
     area: { type: String, required: true },
@@ -13,40 +20,39 @@ const ChefSchema = new mongoose.Schema({
     phone: { type: String, required: true },
     experience: { type: String, required: true },
     cuisine: {
-  type: String,
-},
+      type: String,
+    },
 
-spiceLevel: {
-  type: String,
-  enum: ["Mild", "Medium", "Spicy"],
-},
+    spiceLevel: {
+      type: String,
+      enum: ["Mild", "Medium", "Spicy"],
+    },
 
-pricePerDay: {
-  type: Number,
-},
+    pricePerDay: {
+      type: Number,
+    },
 
-rating: {
-  type: Number,
-  default: 4,
-},
+    rating: {
+      type: Number,
+      default: 4,
+    },
 
-// ✅ ADD THIS
-  hygieneScore: {
-    type: Number,
-    default: 8,
-    min: 0,
-    max: 10,
+    // ✅ ADD THIS
+    hygieneScore: {
+      type: Number,
+      default: 8,
+      min: 0,
+      max: 10,
+    },
+
+    availability: {
+      type: Boolean,
+      default: true,
+    },
   },
+  {
+    timestamps: true,
+  },
+);
 
-availability: {
-  type: Boolean,
-  default: true,
-},
-
-},
-{
-    timestamps:true
-});
-
-
-module.exports = mongoose.model('Chef', ChefSchema);
+module.exports = mongoose.model("Chef", ChefSchema);

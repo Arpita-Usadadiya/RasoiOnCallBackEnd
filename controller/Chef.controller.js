@@ -30,16 +30,24 @@ const smartMatchChefs = async (req, res) => {
 
     let query = {};
 
+    // ✅ cuisine (string match, case-insensitive)
     if (cuisine) {
-      query.cuisine = { $in: [cuisine] };
+      query.cuisine = { $regex: cuisine, $options: "i" };
     }
 
+    // ✅ spice level
+    if (spice) {
+      query.spiceLevel = spice;
+    }
+
+    // ✅ correct field: pricePerDay
     if (maxPrice) {
-      query.price = { $lte: Number(maxPrice) };
+      query.pricePerDay = { $lte: Number(maxPrice) };
     }
 
+    // ✅ correct field: availability
     if (availability === "true") {
-      query.available = true;
+      query.availability = true;
     }
 
     const chefs = await Chef.find(query);
@@ -48,88 +56,147 @@ const smartMatchChefs = async (req, res) => {
       success: true,
       data: chefs,
     });
-
   } catch (error) {
+    console.error("Smart match error:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
-    });
-  }
-};
-//create a chef
-const createChef = async (req, res) => {
-  try {
-   const {
-  name,
-  address,
-  profilepic,
-  city,
-  state,
-  area,
-  country,
-  pincode,
-  email,
-  phone,
-  experience,
-  cuisine,
-  spiceLevel,
-  pricePerDay,
-  hygieneScore,
-  availability
-} = req.body;
-
-    if (
-      !name ||
-      !address ||
-      !city ||
-      !state ||
-      !area ||
-      !country ||
-      !pincode ||
-      !email ||
-      !phone ||
-      !experience
-    ) {
-      return res
-        .status(400)
-        .json({ message: "All required fields must be filled" });
-    }
-    const existingChef = await Chef.findOne({ email: email });
-    if (existingChef) {
-      return res.status(400).json({ message: "Chef already exists" });
-    }
-    
-    const newChef = new Chef({
-  name,
-  address,
-  city,
-  state,
-  area,
-  country,
-  pincode,
-  email,
-  phone,
-  experience,
-  profilepic,
-  cuisine,
-  spiceLevel,
-  pricePerDay,
-  hygieneScore,
-  availability
-});
-
-    await newChef.save();
-    res.status(200).json({
-      message: "Chef created Successfully",
-      chef: newChef,
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({
       message: "Internal server error",
     });
   }
 };
+
+//create a chef
+const createChef = async (req, res) => {
+  try {
+    const userId = req.user.userId; // 🔑 from JWT
+
+    const {
+      name,
+      address,
+      profilepic,
+      city,
+      state,
+      area,
+      country,
+      pincode,
+      email,
+      phone,
+      experience,
+      cuisine,
+      spiceLevel,
+      pricePerDay,
+      hygieneScore,
+      availability
+    } = req.body;
+
+    const newChef = new Chef({
+      userId,
+      name,
+      address,
+      profilepic,
+      city,
+      state,
+      area,
+      country,
+      pincode,
+      email,
+      phone,
+      experience,
+      cuisine,
+      spiceLevel,
+      pricePerDay,
+      hygieneScore,
+      availability
+    });
+
+    await newChef.save();
+
+    res.status(201).json({
+      message: "Chef profile created successfully",
+      chef: newChef,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+// const createChef = async (req, res) => {
+//   try {
+//    const {
+//   name,
+//   address,
+//   profilepic,
+//   city,
+//   state,
+//   area,
+//   country,
+//   pincode,
+//   email,
+//   phone,
+//   experience,
+//   cuisine,
+//   spiceLevel,
+//   pricePerDay,
+//   hygieneScore,
+//   availability
+// } = req.body;
+
+//     if (
+//       !name ||
+//       !address ||
+//       !city ||
+//       !state ||
+//       !area ||
+//       !country ||
+//       !pincode ||
+//       !email ||
+//       !phone ||
+//       !experience
+//     ) {
+//       return res
+//         .status(400)
+//         .json({ message: "All required fields must be filled" });
+//     }
+//     const existingChef = await Chef.findOne({ email: email });
+//     if (existingChef) {
+//       return res.status(400).json({ message: "Chef already exists" });
+//     }
+    
+//     const newChef = new Chef({
+//   name,
+//   address,
+//   city,
+//   state,
+//   area,
+//   country,
+//   pincode,
+//   email,
+//   phone,
+//   experience,
+//   profilepic,
+//   cuisine,
+//   spiceLevel,
+//   pricePerDay,
+//   hygieneScore,
+//   availability
+// });
+
+//     await newChef.save();
+//     res.status(200).json({
+//       message: "Chef created Successfully",
+//       chef: newChef,
+//     });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
 
 // Get all chefs
 const getAllChef = async (req, res) => {
