@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema(
         city: String,
         state: String,
         pincode: String,
+        latitude: Number,
+        longitude: Number
       },
     ],
     role: {
@@ -20,6 +22,19 @@ const UserSchema = new mongoose.Schema(
       enum: ["user", "chef", "admin"],
       default: "user",
     },
+     // 📍 GEO LOCATION
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point"
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      index: "2dsphere"
+    }
+  },
+
 
     isApproved: {
       type: Boolean,

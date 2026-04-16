@@ -1,6 +1,5 @@
-const { UserSignup, UserLogin } = require('../controller/User.controller');
-
-
+const { UserSignup, UserLogin, getProfile, updateProfile } = require('../controller/User.controller');
+const { verifyToken } = require("../middleware/Auth.Middleware");
 const router = require('express').Router();
 
 //Test API Route
@@ -24,6 +23,11 @@ router.post('/signup', UserSignup);
 
 //Login Route
 router.post('/login', UserLogin);
+
+
+router.get("/profile", verifyToken, getProfile);
+
+router.put("/update-profile", verifyToken, updateProfile);
 
 
 module.exports = router;

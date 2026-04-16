@@ -10,6 +10,8 @@ const {
   deleteAllChef,
   smartMatchChefs,
   chefsNearMe,
+  getNearbyChefs,
+  recommendFromBookings, 
 } = require("../controller/Chef.controller");
 
 const Chef = require("../model/Chef.model");
@@ -32,9 +34,13 @@ router.get("/get/:id", getById);
 router.put("/update/:id", updateChef);
 router.delete("/delete/:id", deleteCheftById);
 
+router.get("/nearby", getNearbyChefs);
+
 router.delete("/delete", deleteAllChef);
 
 router.get("/near-me", chefsNearMe);
+
+router.get("/recommend-from-bookings", verifyToken, recommendFromBookings);
 
 router.get("/filter", async (req, res) => {
   const { minHygiene } = req.query;

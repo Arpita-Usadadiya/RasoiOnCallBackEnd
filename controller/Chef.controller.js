@@ -1,5 +1,6 @@
 const { cloudinary } = require("../config/cloudinary");
 const Chef = require("../model/Chef.model");
+const Booking = require("../model/Booking.Model");
 const { mongoose } = require("mongoose");
 
 
@@ -22,42 +23,133 @@ const chefsNearMe = async (req, res) => {
   }
 };
 
+//recommend
+const recommendFromBookings = async (req, res) => {
+  try {
+
+    const userId = req.user.userId;
+
+    // get user's previous bookings
+    const bookings = await Booking.find({ userId }).populate("chefId");
+
+    if (bookings.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // get most frequently booked chef cuisines
+    const cuisineCount = {};
+
+    bookings.forEach((b) => {
+      const cuisine = b.chefId?.cuisine;
+
+      if (!cuisine) return;
+
+      cuisineCount[cuisine] = (cuisineCount[cuisine] || 0) + 1;
+    });
+
+    // sort cuisines by frequency
+    const preferredCuisines = Object.keys(cuisineCount).sort(
+      (a, b) => cuisineCount[b] - cuisineCount[a]
+    );
+
+    // get chefs with those cuisines
+    const chefs = await Chef.find({
+      cuisine: { $in: preferredCuisines }
+    })
+      .sort({ rating: -1 })
+      .limit(5);
+
+    res.json({
+      success: true,
+      data: chefs
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+      message: "Error getting recommendations"
+    });
+
+  }
+};
+
 //smart-match
 
 const smartMatchChefs = async (req, res) => {
   try {
-    const { cuisine, spice, maxPrice, availability } = req.query;
+    const {
+      cuisine,
+      spiceLevel,
+      maxPrice,
+      availability,
+      rating,
+      search,
+      sort
+    } = req.query;
 
     let query = {};
 
-    // ✅ cuisine (string match, case-insensitive)
+    // Cuisine filter
     if (cuisine) {
       query.cuisine = { $regex: cuisine, $options: "i" };
     }
 
-    // ✅ spice level
-    if (spice) {
-      query.spiceLevel = spice;
+    // Spice level filter
+    if (spiceLevel) {
+      query.spiceLevel = spiceLevel;
     }
 
-    // ✅ correct field: pricePerDay
+    // Price filter
     if (maxPrice) {
       query.pricePerDay = { $lte: Number(maxPrice) };
     }
 
-    // ✅ correct field: availability
+    // Availability filter
     if (availability === "true") {
       query.availability = true;
     }
 
-    const chefs = await Chef.find(query);
+    // Rating filter
+    if (rating) {
+      query.rating = { $gte: Number(rating) };
+    }
+
+    // Search by chef name
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    let chefsQuery = Chef.find(query);
+
+    // Sorting
+    if (sort === "priceLow") {
+      chefsQuery = chefsQuery.sort({ pricePerDay: 1 });
+    }
+
+    if (sort === "priceHigh") {
+      chefsQuery = chefsQuery.sort({ pricePerDay: -1 });
+    }
+
+    if (sort === "ratingHigh") {
+      chefsQuery = chefsQuery.sort({ rating: -1 });
+    }
+
+    const chefs = await chefsQuery;
 
     res.status(200).json({
       success: true,
+      results: chefs.length,
       data: chefs,
     });
+
   } catch (error) {
     console.error("Smart match error:", error);
+
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -68,7 +160,15 @@ const smartMatchChefs = async (req, res) => {
 //create a chef
 const createChef = async (req, res) => {
   try {
-    const userId = req.user.userId; // 🔑 from JWT
+    const userId = mongoose.Types.ObjectId(req.user.userId);
+
+    const existingChef = await Chef.findOne({ userId });
+
+    if (existingChef) {
+      return res.status(400).json({
+        message: "Chef profile already exists for this user",
+      });
+    }
 
     const {
       name,
@@ -90,7 +190,8 @@ const createChef = async (req, res) => {
     } = req.body;
 
     const newChef = new Chef({
-      userId,
+      
+      userId: req.user.userId,
       name,
       address,
       profilepic,
@@ -115,6 +216,7 @@ const createChef = async (req, res) => {
       message: "Chef profile created successfully",
       chef: newChef,
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
@@ -319,4 +421,43 @@ const deleteAllChef = async (req, res) => {
   }
 };
 
-module.exports = { createChef, getAllChef, getById, updateChef, deleteCheftById, deleteAllChef, chefsNearMe, smartMatchChefs };
+const getNearbyChefs = async (req, res) => {
+
+  try {
+
+    const { latitude, longitude } = req.query;
+
+    const chefs = await User.find({
+      role: "chef",
+      location: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [
+              parseFloat(longitude),
+              parseFloat(latitude)
+            ]
+          },
+          $maxDistance: 5000   // 5 km
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      chefs
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+      message: "Error finding nearby chefs"
+    });
+
+  }
+
+};
+
+module.exports = { createChef, getAllChef, getById, updateChef, deleteCheftById, deleteAllChef, chefsNearMe, smartMatchChefs, getNearbyChefs, recommendFromBookings };

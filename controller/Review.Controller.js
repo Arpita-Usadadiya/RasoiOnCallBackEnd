@@ -157,38 +157,34 @@ exports.getRatingAnalytics = async (req, res) => {
 exports.getChefStats = async (req, res) => {
   try {
 
-    const chefId = new mongoose.Types.ObjectId(req.params.chefId);;
+    const { chefId } = req.params;
 
-    // total reviews
-    const totalReviews = await Review.countDocuments({ chefId });
-
-    // average rating
     const reviews = await Review.find({ chefId });
 
-    let avgRating = 0;
+    const totalReviews = reviews.length;
 
-    if (reviews.length > 0) {
-      avgRating =
-        reviews.reduce((acc, r) => acc + r.rating, 0) /
-        reviews.length;
-    }
+    const totalRating = reviews.reduce(
+      (sum, r) => sum + r.rating,
+      0
+    );
 
-    // completed bookings
-    const completedBookings = await Booking.countDocuments({
-      chefId,
-      status: "accepted"
-    });
+    const averageRating =
+      totalReviews > 0
+        ? (totalRating / totalReviews).toFixed(1)
+        : 0;
 
     res.json({
       success: true,
       data: {
-        averageRating: avgRating.toFixed(1),
-        totalReviews,
-        completedBookings
+        averageRating,
+        totalReviews
       }
     });
 
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Error fetching chef stats"
+    });
   }
 };

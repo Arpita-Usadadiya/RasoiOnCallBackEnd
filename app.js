@@ -5,6 +5,7 @@ const createError = require("http-errors");
 require("dotenv").config();
 
 const connectDB = require("./config/db");
+const cron = require("node-cron");
 
 // ROUTES
 const UserRoutes = require("./routes/User.route");
@@ -16,6 +17,8 @@ const ChefRoutes = require("./routes/Chef.route");
 const BookingRoutes = require("./routes/Booking.route");
 const ReviewRoutes = require("./routes/Review.route");
 const PaymentRoutes = require("./routes/Payment.route");
+const { autoCancelBookings } = require("./controller/Booking.Controller");
+
 
 const app = express();
 
@@ -38,6 +41,16 @@ connectDB();
 /* -------------------- TEST ROUTE -------------------- */
 app.get("/", (req, res) => {
   res.json({ message: "Backend running 🚀" });
+});
+
+
+/* -------------------- 
+Every 5 minutes
+check bookings
+cancel if pending for 30 minutes
+-------------------- */
+cron.schedule("*/5 * * * *", () => {
+  autoCancelBookings();
 });
 
 /* -------------------- API ROUTES -------------------- */

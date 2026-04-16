@@ -1,19 +1,69 @@
 const Booking = require("../model/Booking.Model");
 const Chef = require("../model/Chef.model");
+const mongoose = require("mongoose");
 
 // CREATE BOOKING
 const createBooking = async (req, res) => {
-  try {
-    const { chefId, visitDate, visitTime, useCase, totalMembers, amount } =
-      req.body;
 
-    const booking = new Booking({
+
+  try {
+
+    const {
       chefId,
       visitDate,
       visitTime,
       useCase,
       totalMembers,
       amount,
+      extraUtensils,
+      ingredientsNeeded,
+      bbqSetup,
+      waiters,
+      deepCleaning,
+      groceryShopping,
+    } = req.body;
+
+    // Validate chefId exists and is a valid ObjectId
+if (!mongoose.Types.ObjectId.isValid(chefId)) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid chefId",
+  });
+}
+
+const chef = await Chef.findById(chefId);
+
+if (!chef) {
+  return res.status(404).json({
+    success: false,
+    message: "Chef not found",
+  });
+}
+
+    const bookingDateTime = new Date(`${visitDate} ${visitTime}`);
+    const now = new Date();
+
+    if (bookingDateTime < now) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot book for past time",
+      });
+    }
+
+    const booking = new Booking({
+      chefId,
+      chefUserId: chef.userId,
+      visitDate,
+      visitTime,
+      useCase,
+      totalMembers,
+      amount,
+      extraUtensils,
+      ingredientsNeeded,
+      bbqSetup,
+      waiters,
+      deepCleaning,
+      groceryShopping,
       userId: req.user.userId,
       status: "pending", // ✅ FIXED
       paymentStatus: "pending",
@@ -21,7 +71,23 @@ const createBooking = async (req, res) => {
       chefArrivalTime: "Not assigned",
     });
 
+    const existingBooking = await Booking.findOne({
+  chefId,
+  visitDate,
+  visitTime,
+  status: { $in: ["pending", "accepted"] }
+});
+
+if (existingBooking) {
+  return res.status(400).json({
+    success: false,
+    message: "This time slot is already booked"
+  });
+}
+
     await booking.save();
+    console.log("ChefId received:", chefId);
+console.log("UserId:", req.user.userId);
 
     res.status(201).json({
       success: true,
@@ -46,16 +112,27 @@ const getBooking = async (req, res) => {
     const now = new Date();
 
     bookings.forEach((b) => {
-      if (b.status !== "accepted") {
+      if (b.status === "completed") {
+        b.serviceStatus = "completed";
+        return;
+      }
+
+      if (b.status === "cancelled" || b.status === "rejected") {
+        b.serviceStatus = "cancelled";
+        return;
+      }
+
+      if (b.status === "pending") {
         b.serviceStatus = "pending";
         return;
       }
+
       const visit = new Date(`${b.visitDate} ${b.visitTime}`);
 
       const endTime = new Date(visit);
-      endTime.setHours(endTime.getHours() + 2); // lunch end time
+      endTime.setHours(endTime.getHours() + 2);
 
-      if (now > endTime) {
+      if (new Date() > endTime) {
         b.serviceStatus = "completed";
       } else {
         b.serviceStatus = "upcoming";
@@ -133,10 +210,19 @@ const deleteBooking = async (req, res) => {
 // CHEF: Get bookings assigned to logged-in chef
 const getChefBookings = async (req, res) => {
   try {
+    const chef = await Chef.findOne({ userId: req.user.userId });
+
+    if (!chef) {
+      return res.status(404).json({
+        success: false,
+        message: "Chef not found",
+      });
+    }
+
     const bookings = await Booking.find({
-      chefId: req.user.userId,
+      chefId: chef._id,
     })
-      .populate("userId", "name phone email addresses") // ✅ ADD THIS
+      .populate("userId", "name phone email addresses")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -144,7 +230,11 @@ const getChefBookings = async (req, res) => {
       data: bookings,
     });
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch chef bookings" });
+    console.log(error);
+
+    res.status(500).json({
+      message: "Failed to fetch chef bookings",
+    });
   }
 };
 
@@ -175,7 +265,7 @@ const updateBookingStatus = async (req, res) => {
     }
 
     if (req.body.status === "rejected") {
-      booking.refundStatus = "requested";
+      booking.refundStatus = "initiated";
       booking.chefArrivalTime = "Not assigned";
       booking.serviceStatus = "cancelled";
     }
@@ -196,7 +286,7 @@ const updateBookingStatus = async (req, res) => {
 const getChefNotifications = async (req, res) => {
   try {
     console.log("Logged in userId:", req.user.userId);
-    const chef = await Chef.findOne({ userId: req.user.userId });
+    const chef = await Chef.findOne({ userId: new mongoose.Types.ObjectId(req.user.userId)});
 
     if (!chef) {
       return res.status(404).json({
@@ -208,7 +298,10 @@ const getChefNotifications = async (req, res) => {
     const bookings = await Booking.find({
       chefId: chef._id,
       status: "pending",
-    }).populate("userId", "name email");
+    })
+      .populate("userId", "name email")
+      .populate("userId", "name email phone addresses")
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
@@ -222,6 +315,121 @@ const getChefNotifications = async (req, res) => {
   }
 };
 
+const getChefAllBookings = async (req, res) => {
+  try {
+
+    console.log("Logged-in userId:", req.user.userId, typeof req.user.userId);
+
+    // find chef using logged in user
+    const chef = await Chef.findOne({ userId: req.user.userId });
+
+    console.log("Chef found:", chef);
+
+    if (!chef) {
+      return res.status(404).json({
+        success: false,
+        message: "Chef not found"
+      });
+    }
+
+    const bookings = await Booking.find({
+      chefId: chef._id
+    })
+    .populate("userId", "name phone addresses")
+    .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: bookings
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const autoCancelBookings = async () => {
+  try {
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    const bookings = await Booking.find({
+      status: "pending",
+      createdAt: { $lte: thirtyMinutesAgo },
+      paymentStatus: "paid",
+    });
+
+    for (let booking of bookings) {
+      booking.status = "cancelled";
+      booking.refundStatus = "initiated";
+
+      await booking.save();
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getBookedSlots = async (req, res) => {
+  try {
+    const { chefId, date } = req.query;
+
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    const bookings = await Booking.find({
+      chefId,
+      visitDate: { $gte: start, $lte: end },
+      status: { $nin: ["cancelled", "rejected"] },
+    });
+
+    const slots = bookings.map((b) => b.visitTime);
+
+    res.json(slots);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Error fetching slots" });
+  }
+};
+
+const completeService = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+
+    const booking = await Booking.findById(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    booking.status = "completed";
+    booking.serviceStatus = "completed";
+
+    await booking.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Service marked as completed",
+      data: booking,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 module.exports = {
   createBooking,
   getBooking,
@@ -231,4 +439,8 @@ module.exports = {
   getChefBookings,
   updateBookingStatus,
   getChefNotifications,
+  autoCancelBookings,
+  getBookedSlots,
+  completeService,
+  getChefAllBookings,
 };

@@ -145,7 +145,94 @@ const UserLogin = async (req, res) => {
   }
 };
 
-module.exports = { UserSignup, UserLogin };
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    res.json({
+      success: true,
+      data: user
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateProfile = async (req, res) => {
+
+  try {
+
+    const userId = req.user.userId;
+
+    const { name, phone, addresses } = req.body;
+
+    const latitude = addresses[0].latitude;
+    const longitude = addresses[0].longitude;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        name,
+        phone,
+        addresses,
+
+        // ⭐ GEO LOCATION SAVE
+        location: {
+          type: "Point",
+          coordinates: [longitude, latitude]
+        }
+
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      data: updatedUser
+    });
+
+  } catch (error) {
+
+    console.log(error);
+    res.status(500).json({ message: "Error updating profile" });
+
+  }
+
+};
+
+const getLocation = () => {
+
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      console.log(latitude, longitude);
+
+      setForm({
+        ...form,
+        latitude,
+        longitude
+      });
+
+    },
+    (error) => {
+      console.log(error);
+      alert("Unable to fetch location");
+    }
+  );
+};
+
+module.exports = { UserSignup, UserLogin, getProfile, 
+updateProfile, getLocation};
 
 
 

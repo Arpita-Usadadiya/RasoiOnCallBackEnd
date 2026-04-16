@@ -1,5 +1,3 @@
-// model/Booking.Model.js
-
 const mongoose = require("mongoose");
 
 const BookingSchema = new mongoose.Schema(
@@ -10,20 +8,23 @@ const BookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    visitDate: {
-      type: String,
-      required: true,
-    },
-
-    visitTime: {
-      type: String,
-      required: true,
-    },
-
     chefId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Chef",
       required: true,
+    },
+
+    chefUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    visitDate: {
+      type: String,
+    },
+
+    visitTime: {
+      type: String,
     },
 
     useCase: {
@@ -44,7 +45,7 @@ const BookingSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
+      enum: ["pending", "accepted", "rejected", "completed", "cancelled"],
       default: "pending",
     },
 
@@ -61,10 +62,41 @@ const BookingSchema = new mongoose.Schema(
     chefArrivalTime: {
       type: String,
     },
+
     refundStatus: {
-  type: String,
-  default: "none"
-}
+      type: String,
+      default: "none",
+    },
+
+    extraUtensils: {
+      type: Boolean,
+      default: false,
+    },
+
+    ingredientsNeeded: {
+      type: Boolean,
+      default: false,
+    },
+
+    bbqSetup: {
+      type: Boolean,
+      default: false,
+    },
+
+    waiters: {
+      type: Number,
+      default: 0,
+    },
+
+    deepCleaning: {
+      type: Boolean,
+      default: false,
+    },
+
+    groceryShopping: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
