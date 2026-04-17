@@ -33,10 +33,10 @@ const createCheckoutSession = async (req, res) => {
     bookingId: bookingId
   },
 
-  // success_url: `${process.env.CLIENT_URL}/payment-success?bookingId=${bookingId}`,
-  // cancel_url: `${process.env.CLIENT_URL}/payment-cancel`
-  success_url: "https://rasoi-on-call-git-main-arpita-usadadiyas-projects.vercel.app/payment-success?bookingId={CHECKOUT_SESSION_ID}",
-cancel_url: "https://rasoi-on-call-git-main-arpita-usadadiyas-projects.vercel.app/"
+  success_url: `${process.env.CLIENT_URL}/payment-success?bookingId=${bookingId}`,
+  cancel_url: `${process.env.CLIENT_URL}/payment-cancel`
+  //   success_url: "https://rasoi-on-call-git-main-arpita-usadadiyas-projects.vercel.app/payment-success?bookingId={CHECKOUT_SESSION_ID}",
+  // cancel_url: "https://rasoi-on-call-git-main-arpita-usadadiyas-projects.vercel.app/"
 });
 
     res.json({
